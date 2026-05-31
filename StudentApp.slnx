@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Documentation/">
+    <File Path="../documentation/EventSubstrate.md" />
+  </Folder>
+  <Project Path="StudentApp.Core.Tests.Acceptance/StudentApp.Core.Tests.Acceptance.csproj" />
+  <Project Path="StudentApp.Core.Tests.Unit/StudentApp.Core.Tests.Unit.csproj" />
+  <Project Path="StudentApp.Core/StudentApp.Core.csproj" />
+  <Project Path="StudentApp.Infrastructure/StudentApp.Infrastructure.csproj" />
+</Solution>
