@@ -64,12 +64,12 @@ For example, in a student application:
 
 | Service | Emits | Receives |
 |---|---|---|
-| StudentService | StudentCreatedEvent | StudentEnrolledEvent |
-| EnrollmentService | StudentEnrolledEvent | StudentCreatedEvent |
+| StudentService | StudentAddedEvent | StudentEnrolledEvent |
+| EnrollmentService | StudentEnrolledEvent | StudentAddedEvent |
 | TimetableService | TimetableGeneratedEvent | StudentEnrolledEvent |
-| NotificationService | NotificationSentEvent | StudentCreatedEvent, TimetableGeneratedEvent |
+| NotificationService | WelcomeEmailSentEvent, TimetableEmailSentEvent | StudentAddedEvent, TimetableGeneratedEvent |
 | AuditService | AuditRecordedEvent | Any event |
-| SearchIndexService | StudentIndexedEvent | StudentCreatedEvent, StudentUpdatedEvent |
+| SearchIndexService | StudentIndexedEvent | StudentAddedEvent, StudentModifiedEvent |
 
 ### Event Chain Timeline
 
@@ -78,10 +78,10 @@ The following shows the full event propagation chain, starting from the moment a
 ```
 [1] StudentService
     │  Action: Student record created (e.g. via API)
-    │  Emits: StudentCreatedEvent
+    │  Emits: StudentAddedEvent
     │
     ├──▶ [2a] EnrollmentService
-    │         Receives: StudentCreatedEvent
+    │         Receives: StudentAddedEvent
     │         Action: Creates enrollment record
     │         Emits: StudentEnrolledEvent
     │         │
@@ -93,7 +93,7 @@ The following shows the full event propagation chain, starting from the moment a
     │         │         └──▶ [4a] NotificationService
     │         │                   Receives: TimetableGeneratedEvent
     │         │                   Action: Sends timetable notification to student
-    │         │                   Emits: NotificationSentEvent
+    │         │                   Emits: TimetableEmailSentEvent
     │         │
     │         └──▶ [3b] AuditService
     │                   Receives: StudentEnrolledEvent (via Any event)
@@ -101,17 +101,17 @@ The following shows the full event propagation chain, starting from the moment a
     │                   Emits: AuditRecordedEvent
     │
     ├──▶ [2b] NotificationService
-    │         Receives: StudentCreatedEvent
+    │         Receives: StudentAddedEvent
     │         Action: Sends welcome notification to student
-    │         Emits: NotificationSentEvent
+    │         Emits: WelcomeEmailSentEvent
     │
     ├──▶ [2c] AuditService
-    │         Receives: StudentCreatedEvent (via Any event)
+    │         Receives: StudentAddedEvent (via Any event)
     │         Action: Records creation audit entry
     │         Emits: AuditRecordedEvent
     │
     └──▶ [2d] SearchIndexService
-              Receives: StudentCreatedEvent
+              Receives: StudentAddedEvent
               Action: Indexes new student record for search
               Emits: StudentIndexedEvent
 ```
@@ -258,33 +258,33 @@ StudentService.Substrate.cs
 
 ```text
 ┌─────────────────────────────┐
-│          Controller          │
+│          Controller         │
 └──────────────┬──────────────┘
                │
                ↓
 ┌─────────────────────────────┐
-│   Student Orchestration      │
+│   Student Orchestration     │
 └──────────────┬──────────────┘
                │
                ↓
 ┌─────────────────────────────┐
-│      Foundation Services     │
+│      Foundation Services    │
 │                             │
-│  StudentService              │
-│  EnrollmentService           │
-│  TimetableService            │
-│  NotificationService         │
+│  StudentService             │
+│  EnrollmentService          │
+│  TimetableService           │
+│  NotificationService        │
 └──────────────┬──────────────┘
                │
                ↓
 ┌─────────────────────────────┐
-│       Event Substrate Broker        │
+│   Event Substrate Broker    │
 │                             │
-│  Local Dispatch              │
-│  Event Store                 │
-│  External Dispatch           │
-│  Replay Engine               │
-│  Dead Letter Store           │
+│  Local Dispatch             │
+│  Event Store                │
+│  External Dispatch          │
+│  Replay Engine              │
+│  Dead Letter Store          │
 └─────────────────────────────┘
 ```
 
@@ -352,7 +352,7 @@ The logical event name.
 Example:
 
 ```text
-StudentCreatedEvent
+StudentAddedEvent
 StudentEnrolledEvent
 TimetableGeneratedEvent
 ```
@@ -371,7 +371,7 @@ Example:
 
 ```text
 Register student operation
-    ├── StudentCreatedEvent
+    ├── StudentAddedEvent
     ├── StudentEnrolledEvent
     ├── TimetableGeneratedEvent
     └── WelcomeEmailSentEvent
@@ -386,14 +386,14 @@ Identifies the event that caused this event.
 Example:
 
 ```text
-StudentCreatedEvent
+StudentAddedEvent
     ↓ causes
 StudentEnrolledEvent
     ↓ causes
 TimetableGeneratedEvent
 ```
 
-The `CausationId` of `StudentEnrolledEvent` would be the `EventId` of `StudentCreatedEvent`.
+The `CausationId` of `StudentEnrolledEvent` would be the `EventId` of `StudentAddedEvent`.
 
 ### 5.6 OccurredDate
 
@@ -507,10 +507,13 @@ Use past-tense names.
 Good:
 
 ```text
-StudentCreatedEvent
+StudentAddedEvent
+StudentModifiedEvent
+StudentRemovedEvent
 StudentEnrolledEvent
 TimetableGeneratedEvent
 WelcomeEmailSentEvent
+TimetableEmailSentEvent
 ```
 
 Avoid command-style names:
@@ -525,6 +528,16 @@ SendWelcomeEmailEvent
 A command asks for something to happen.
 
 An event says something already happened.
+
+### Principle: Typed Event Contracts Are Not Domain Entities
+
+A typed event contract and a domain entity may share fields, but they are not the same object in design terms.
+
+- Domain entities model current business state and persistence concerns.
+- Typed event contracts model historical facts for dispatch, replay, and integration.
+- Entity and event shapes should be allowed to diverge over time without forcing each other to change.
+
+Example: `Student` and `StudentAddedEvent` may look similar initially, but over time `Student` may gain persistence-specific fields while `StudentAddedEvent` evolves for subscriber and contract-version needs.
 
 ---
 
@@ -835,7 +848,7 @@ Local dispatch means calling in-process substrate receivers.
 Example:
 
 ```text
-StudentCreatedEvent
+StudentAddedEvent
     ↓
 EnrollmentService.ReceiveAsync(...)
 NotificationService.ReceiveAsync(...)
@@ -926,10 +939,10 @@ Example route configuration:
 ```json
 [
   {
-    "eventName": "StudentCreatedEvent",
+    "eventName": "StudentAddedEvent",
     "destinationName": "ExternalStudentPortal",
     "destinationType": "REST",
-    "destinationAddress": "https://external-system.example.com/api/events/student-created",
+    "destinationAddress": "https://external-system.example.com/api/events/student-added",
     "isEnabled": true
   },
   {
@@ -1146,7 +1159,7 @@ Example receiver guard:
 
 ```csharp
 async ValueTask(
-    EventEnvelope<StudentCreatedEvent> envelope,
+    EventEnvelope<StudentAddedEvent> envelope,
     CancellationToken cancellationToken = default)
 {
     bool alreadyProcessed =
@@ -1194,27 +1207,78 @@ public sealed class Student
 
 ### 17.2 Events
 
+These are typed event contracts, not domain entities. They are designed for event semantics and subscriber needs.
+
+### 17.3 Typed Event Contracts Are Not Domain Entities
+
+Typed event contracts and domain entities may look similar at first, but they model different concerns.
+
+| Concern | Domain Entity (`Student`) | Typed Event Contract (`StudentAddedEvent`) |
+|---|---|---|
+| Meaning | Current business state | Fact that occurred at a point in time |
+| Lifecycle | Mutable and persistence-oriented | Immutable contract for dispatch, replay, and integration |
+| Owner | Domain + storage model | Event substrate + consumers |
+| Change Driver | Business rules and persistence needs | Subscriber needs, integration, and versioning |
+
+Even when fields overlap today, they diverge over time:
+
+- Domain entities gain persistence concerns (navigation properties, ORM metadata, internal fields).
+- Event contracts evolve for consumers (new event-only fields, renamed fields, versioned contracts).
+- Some events become intentionally minimal (`StudentId` only), while entities remain rich and mutable.
+- Event contracts may version independently (`StudentAddedEventV1`, `StudentAddedEventV2`) without forcing entity redesign.
+
+This is why mapping from `Student` to `StudentAddedEvent` is expected and healthy.
+
+### 17.4 Event Contract Examples
+
 ```csharp
-public sealed class StudentCreatedEvent
+public sealed class StudentAddedEvent
 {
     public Guid StudentId { get; init; }
 
-    public string FullName { get; init; } = string.Empty;
+    public string FirstName { get; init; } = string.Empty;
+
+    public string LastName { get; init; } = string.Empty;
+
+    public DateOnly DateOfBirth { get; init; }
+
+    public string Email { get; init; } = string.Empty;
+
+    public string Status { get; init; } = string.Empty;
 }
 ```
 
-
 ```csharp
-public sealed class StudentUpdatedEvent
+public sealed class StudentModifiedEvent
 {
     public Guid StudentId { get; init; }
+
+    public string FirstName { get; init; } = string.Empty;
+
+    public string LastName { get; init; } = string.Empty;
+
+    public DateOnly DateOfBirth { get; init; }
+
+    public string Email { get; init; } = string.Empty;
+
+    public string Status { get; init; } = string.Empty;
 }
 ```
 
 ```csharp
-public sealed class StudentDeletedEvent
+public sealed class StudentRemovedEvent
 {
     public Guid StudentId { get; init; }
+
+    public string FirstName { get; init; } = string.Empty;
+
+    public string LastName { get; init; } = string.Empty;
+
+    public DateOnly DateOfBirth { get; init; }
+
+    public string Email { get; init; } = string.Empty;
+
+    public string Status { get; init; } = string.Empty;
 }
 ```
 
@@ -1223,7 +1287,7 @@ public sealed class StudentEnrolledEvent
 {
     public Guid StudentId { get; init; }
 
-    public string CourseCode { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
 }
 ```
 
@@ -1238,8 +1302,13 @@ public sealed class TimetableGeneratedEvent
 public sealed class WelcomeEmailSentEvent
 {
     public Guid StudentId { get; init; }
+}
+```
 
-    public string EmailAddress { get; init; } = string.Empty;
+```csharp
+public sealed class TimetableEmailSentEvent
+{
+    public Guid StudentId { get; init; }
 }
 ```
 
@@ -1373,12 +1442,16 @@ public sealed partial class StudentService : IStudentService
                 student,
                 cancellationToken);
 
-        EventEnvelope<StudentCreatedEvent> envelope =
+        EventEnvelope<StudentAddedEvent> envelope =
             await this.envelopeFactory.CreateAsync(
-                new StudentCreatedEvent
+                new StudentAddedEvent
                 {
                     StudentId = savedStudent.Id,
-                    FullName = $"{savedStudent.FirstName} {savedStudent.LastName}"
+                    FirstName = savedStudent.FirstName,
+                    LastName = savedStudent.LastName,
+                    DateOfBirth = savedStudent.DateOfBirth,
+                    Email = savedStudent.Email,
+                    Status = savedStudent.Status
                 },
                 cancellationToken);
 
@@ -1410,11 +1483,16 @@ public sealed partial class StudentService : IStudentService
                 student,
                 cancellationToken);
 
-        EventEnvelope<StudentUpdatedEvent> envelope =
+        EventEnvelope<StudentModifiedEvent> envelope =
             await this.envelopeFactory.CreateAsync(
-                new StudentUpdatedEvent
+                new StudentModifiedEvent
                 {
-                    StudentId = modifiedStudent.Id
+                    StudentId = modifiedStudent.Id,
+                    FirstName = modifiedStudent.FirstName,
+                    LastName = modifiedStudent.LastName,
+                    DateOfBirth = modifiedStudent.DateOfBirth,
+                    Email = modifiedStudent.Email,
+                    Status = modifiedStudent.Status
                 },
                 cancellationToken);
 
@@ -1439,11 +1517,16 @@ public sealed partial class StudentService : IStudentService
                 student,
                 cancellationToken);
 
-        EventEnvelope<StudentDeletedEvent> envelope =
+        EventEnvelope<StudentRemovedEvent> envelope =
             await this.envelopeFactory.CreateAsync(
-                new StudentDeletedEvent
+                new StudentRemovedEvent
                 {
-                    StudentId = deletedStudent.Id
+                    StudentId = deletedStudent.Id,
+                    FirstName = deletedStudent.FirstName,
+                    LastName = deletedStudent.LastName,
+                    DateOfBirth = deletedStudent.DateOfBirth,
+                    Email = deletedStudent.Email,
+                    Status = deletedStudent.Status
                 },
                 cancellationToken);
 
@@ -1490,9 +1573,9 @@ The Student Service is therefore both:
 ```text
 Emitter
 -------
-AddStudentAsync(...) emits StudentCreatedEvent
-ModifyStudentAsync(...) emits StudentUpdatedEvent
-RemoveStudentByIdAsync(...) emits StudentDeletedEvent
+AddStudentAsync(...) emits StudentAddedEvent
+ModifyStudentAsync(...) emits StudentModifiedEvent
+RemoveStudentByIdAsync(...) emits StudentRemovedEvent
 
 Receiver
 --------
@@ -1547,7 +1630,7 @@ public sealed partial class EnrollmentService : IEnrollmentService
                 new StudentEnrolledEvent
                 {
                     StudentId = studentId,
-                    CourseCode = courseCode
+                    Status = "Active"
                 },
                 cancellationToken);
 
@@ -1562,11 +1645,11 @@ public sealed partial class EnrollmentService : IEnrollmentService
 
 ```csharp
 public sealed partial class EnrollmentService :
-    IEventReceiver<StudentCreatedEvent>
+    IEventReceiver<StudentAddedEvent>
 {
     async ValueTask
-        IEventReceiver<StudentCreatedEvent>.ReceiveAsync(
-            EventEnvelope<StudentCreatedEvent> envelope,
+        IEventReceiver<StudentAddedEvent>.ReceiveAsync(
+            EventEnvelope<StudentAddedEvent> envelope,
             CancellationToken cancellationToken)
     {
         // Optional automatic reaction.
@@ -1706,8 +1789,7 @@ public sealed partial class NotificationService : INotificationService
             await this.envelopeFactory.CreateAsync(
                 new WelcomeEmailSentEvent
                 {
-                    StudentId = studentId,
-                    EmailAddress = "student@example.com"
+                    StudentId = studentId
                 },
                 cancellationToken);
 
@@ -1731,12 +1813,12 @@ public sealed partial class NotificationService : INotificationService
 
 ```csharp
 public sealed partial class NotificationService :
-    IEventReceiver<StudentCreatedEvent>,
+    IEventReceiver<StudentAddedEvent>,
     IEventReceiver<TimetableGeneratedEvent>
 {
     async ValueTask
-        IEventReceiver<StudentCreatedEvent>.ReceiveAsync(
-            EventEnvelope<StudentCreatedEvent> envelope,
+        IEventReceiver<StudentAddedEvent>.ReceiveAsync(
+            EventEnvelope<StudentAddedEvent> envelope,
             CancellationToken cancellationToken)
     {
         await this.SendWelcomeEmailAsync(
@@ -2055,9 +2137,9 @@ The substrate registration can internally map:
 
 ```csharp
 IEventReceiver<StudentEnrolledEvent>      -> StudentService
-IEventReceiver<StudentCreatedEvent>       -> EnrollmentService
+IEventReceiver<StudentAddedEvent>         -> EnrollmentService
 IEventReceiver<StudentEnrolledEvent>      -> TimetableService
-IEventReceiver<StudentCreatedEvent>       -> NotificationService
+IEventReceiver<StudentAddedEvent>         -> NotificationService
 IEventReceiver<TimetableGeneratedEvent>   -> NotificationService
 ```
 
@@ -2103,7 +2185,7 @@ Events should be versioned.
 Example:
 
 ```csharp
-public sealed class StudentCreatedEventV1
+public sealed class StudentAddedEventV1
 {
     public Guid StudentId { get; init; }
 
@@ -2112,7 +2194,7 @@ public sealed class StudentCreatedEventV1
 ```
 
 ```csharp
-public sealed class StudentCreatedEventV2
+public sealed class StudentAddedEventV2
 {
     public Guid StudentId { get; init; }
 
@@ -2229,11 +2311,13 @@ Services
 │   │   ├── SecurityContext.cs
 │   │   └── RequestContext.cs
 │   ├── StudentEvents
-│   │   ├── StudentCreatedEvent.cs
-│   │   ├── StudentUpdatedEvent.cs
-│   │   ├── StudentDeletedEvent.cs
+│   │   ├── StudentAddedEvent.cs
+│   │   ├── StudentModifiedEvent.cs
+│   │   ├── StudentRemovedEvent.cs
 │   │   ├── StudentEnrolledEvent.cs
-│   │   └── TimetableGeneratedEvent.cs
+│   │   ├── TimetableGeneratedEvent.cs
+│   │   ├── WelcomeEmailSentEvent.cs
+│   │   └── TimetableEmailSentEvent.cs
 │   └── Substrate
 │       ├── EventSubstrateBroker.cs
 │       ├── LocalEventDispatcher.cs
@@ -2440,9 +2524,9 @@ Those are infrastructure details hidden behind the broker.
 The service emits a fact:
 
 ```text
-StudentCreatedEvent
-StudentUpdatedEvent
-StudentDeletedEvent
+StudentAddedEvent
+StudentModifiedEvent
+StudentRemovedEvent
 ```
 
 The broker decides what to do with it:
@@ -2671,7 +2755,7 @@ No service code changes when the broker evolves from local dispatch to durable d
 The `EventSubstrateBroker` should not contain domain decisions such as:
 
 ```text
-If StudentCreatedEvent, enroll student.
+If StudentAddedEvent, enroll student.
 If TimetableGeneratedEvent, notify parent.
 If StudentSuspendedEvent, disable login.
 ```
@@ -2906,10 +2990,10 @@ The Service Bus route may be configured like this:
 
 ```json
 {
-  "eventName": "StudentCreatedEvent",
-  "destinationName": "StudentCreatedTopic",
+  "eventName": "StudentAddedEvent",
+  "destinationName": "StudentAddedTopic",
   "destinationType": "AzureServiceBus",
-  "destinationAddress": "student-created",
+  "destinationAddress": "student-added",
   "isEnabled": true
 }
 ```
@@ -3063,7 +3147,7 @@ ITimetableService
 The substrate may internally resolve:
 
 ```csharp
-IEventReceiver<StudentCreatedEvent>
+IEventReceiver<StudentAddedEvent>
 IEventReceiver<StudentEnrolledEvent>
 IEventReceiver<TimetableGeneratedEvent>
 ```
@@ -3149,7 +3233,7 @@ The distinction from a pure reaction event is:
 | Receiver/receiver is | Optional / loosely coupled | Expected and required |
 | Order matters | Usually not | Often yes |
 | Who owns the receiver | The reacting service | The domain service responsible for that object type |
-| Example | `StudentCreatedEvent` → AuditService reacts | `StudentImportRequestedEvent` → StudentService is the required receiver |
+| Example | `StudentAddedEvent` → AuditService reacts | `StudentImportRequestedEvent` → StudentService is the required receiver |
 
 ### 34.3 Naming Convention
 
@@ -3157,7 +3241,7 @@ Use a name that reflects the intent, not a past-tense fact, because the work has
 
 ```text
 StudentImportRequestedEvent      ✅  (intent — work is being dispatched)
-StudentCreatedEvent              ✅  (fact — work already happened)
+StudentAddedEvent                ✅  (fact — work already happened)
 CreateStudentEvent               ❌  (command style — avoid)
 ImportStudentEvent               ❌  (ambiguous — past or future?)
 ```
@@ -3381,7 +3465,7 @@ Levent
 Internal Receivers
 ```
 
-### 36.2 Stage 2 - Durable Event Storage
+### 36.2 Stage 2 - Durable Event Storage (When EventHighway support for local events is available)
 
 ```text
 Foundation Service
@@ -3395,11 +3479,11 @@ Levent
 Internal Receivers
 ```
 
-### 36.3 Stage 3 - Delivery Tracking
+### 36.3 Stage 3 - Delivery Tracking (EventHighway fire and observe)
 
 Add delivery records and outbox-style processing.
 
-### 36.4 Stage 4 - REST and Webhook Fan-Out
+### 36.4 Stage 4 - REST and Webhook Fan-Out (EventHighway)
 
 ```text
 Event Store
@@ -3436,28 +3520,3 @@ Azure Service Bus
     ↓
 Application B
 ```
-
-### 36.8 Recommended Extension Order
-
-1. EventEnvelope
-2. IEventSubstrateBroker
-3. IEventReceiver<T>
-4. Levent implementation
-5. Receiver discovery
-6. Event persistence
-7. Replay
-8. Delivery records
-9. External delivery worker
-10. Service Bus integration
-
-### 36.9 Transport Isolation Rule
-
-Foundation Services must only know:
-
-```csharp
-IEventSubstrateBroker
-```
-
-### 36.10 Long-Term Goal
-
-Evolve from local in-process events to a durable distributed event platform without changing Foundation Services.

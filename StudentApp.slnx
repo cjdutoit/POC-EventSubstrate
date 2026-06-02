@@ -1,9 +1,12 @@
 <Solution>
   <Folder Name="/Documentation/">
-    <File Path="../documentation/EventSubstrate.md" />
+    <File Path="documentation/EventSubstrate.md" />
+    <File Path="README.md" />
   </Folder>
+  <Project Path="StudentApp.Console/StudentApp.Console.csproj" />
   <Project Path="StudentApp.Core.Tests.Acceptance/StudentApp.Core.Tests.Acceptance.csproj" />
   <Project Path="StudentApp.Core.Tests.Unit/StudentApp.Core.Tests.Unit.csproj" />
   <Project Path="StudentApp.Core/StudentApp.Core.csproj" />
   <Project Path="StudentApp.Infrastructure/StudentApp.Infrastructure.csproj" />
+  <Project Path="StudentApp.Security.Client/StudentApp.Security.Client.csproj" />
 </Solution>
