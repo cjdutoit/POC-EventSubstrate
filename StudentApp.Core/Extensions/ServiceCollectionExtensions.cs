@@ -39,10 +39,14 @@ namespace StudentApp.Core.Extensions
             services.AddSingleton<IStorageBroker>(_ => new StorageBroker(connectionString));
 
             // Foundation Services
-            services.AddTransient<IStudentService, StudentService>();
-            services.AddTransient<IEnrollmentService, EnrollmentService>();
-            services.AddTransient<ITimetableService, TimetableService>();
-            services.AddTransient<INotificationService, NotificationService>();
+            services.AddTransient<StudentService>();
+            services.AddTransient<IStudentService>(sp => sp.GetRequiredService<StudentService>());
+            services.AddTransient<EnrollmentService>();
+            services.AddTransient<IEnrollmentService>(sp => sp.GetRequiredService<EnrollmentService>());
+            services.AddTransient<TimetableService>();
+            services.AddTransient<ITimetableService>(sp => sp.GetRequiredService<TimetableService>());
+            services.AddTransient<NotificationService>();
+            services.AddTransient<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
 
             // Orchestration
             services.AddTransient<IStudentOrchestrationService, StudentOrchestrationService>();
@@ -58,16 +62,16 @@ namespace StudentApp.Core.Extensions
 
         private static void RegisterStudentEventReceivers(this IServiceProvider serviceProvider)
         {
-            serviceProvider.RegisterEventReceiver<StudentEnrolledEvent, IStudentService>(
+            serviceProvider.RegisterEventReceiver<StudentEnrolledEvent, StudentService>(
                 StudentEventNames.StudentEnrolled);
 
-            serviceProvider.RegisterEventReceiver<StudentEnrolledEvent, ITimetableService>(
+            serviceProvider.RegisterEventReceiver<StudentEnrolledEvent, TimetableService>(
                 StudentEventNames.StudentEnrolled);
 
-            serviceProvider.RegisterEventReceiver<StudentAddedEvent, INotificationService>(
+            serviceProvider.RegisterEventReceiver<StudentAddedEvent, NotificationService>(
                 StudentEventNames.StudentAdded);
 
-            serviceProvider.RegisterEventReceiver<TimetableGeneratedEvent, INotificationService>(
+            serviceProvider.RegisterEventReceiver<TimetableGeneratedEvent, NotificationService>(
                 StudentEventNames.TimetableGenerated);
         }
 

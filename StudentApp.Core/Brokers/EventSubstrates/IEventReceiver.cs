@@ -6,7 +6,7 @@ using StudentApp.Core.Models.Events;
 
 namespace StudentApp.Core.Brokers.EventSubstrates
 {
-    public interface IEventReceiver<TEvent>
+    internal interface IEventReceiver<TEvent>
     {
         ValueTask ReceiveAsync(
             EventEnvelope<TEvent> envelope,
