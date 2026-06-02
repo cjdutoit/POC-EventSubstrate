@@ -1,0 +1,109 @@
+// -----------------------------------------------------
+// Copyright (c)  Christo du Toit - All rights reserved.
+// -----------------------------------------------------
+
+using System;
+using FluentAssertions;
+using Microsoft.Data.SqlClient;
+using Moq;
+using StudentApp.Core.Models.Foundations.Students.Exceptions;
+
+namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
+{
+    public partial class StudentServiceTests
+    {
+        [Fact]
+        public void ShouldThrowCriticalDependencyExceptionOnRetrieveAllIfSqlErrorOccurs()
+        {
+            // given
+            SqlException sqlException = CreateSqlException();
+
+            var failedStudentStorageException =
+                new FailedStudentStorageException(
+                    message: "Failed student storage error occurred, contact support.",
+                    innerException: sqlException,
+                    data: sqlException.Data);
+
+            var expectedStudentDependencyException =
+                new StudentDependencyException(
+                    message: "Student dependency error occurred, contact support.",
+                    innerException: failedStudentStorageException);
+
+            this.storageBrokerMock.Setup(broker =>
+                broker.SelectAllStudents())
+                    .Throws(sqlException);
+
+            // when
+            Action retrieveAllStudentsAction = () =>
+                this.studentService.RetrieveAllStudents();
+
+            StudentDependencyException actualStudentDependencyException =
+                Assert.Throws<StudentDependencyException>(retrieveAllStudentsAction);
+
+            // then
+            actualStudentDependencyException.Should()
+                .BeEquivalentTo(expectedStudentDependencyException);
+
+            this.loggingBrokerMock.Verify(broker =>
+                broker.LogError(It.Is(SameExceptionAs(
+                    expectedStudentDependencyException))),
+                        Times.Once);
+
+            this.storageBrokerMock.Verify(broker =>
+                broker.SelectAllStudents(),
+                    Times.Once);
+
+            this.storageBrokerMock.VerifyNoOtherCalls();
+            this.envelopeFactoryMock.VerifyNoOtherCalls();
+            this.eventSubstrateBrokerMock.VerifyNoOtherCalls();
+            this.loggingBrokerMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void ShouldThrowServiceExceptionOnRetrieveAllIfUnexpectedErrorOccurs()
+        {
+            // given
+            var serviceException = new Exception();
+
+            var failedStudentServiceException =
+                new FailedStudentServiceException(
+                    message: "Failed student service error occurred, contact support.",
+                    innerException: serviceException,
+                    data: serviceException.Data);
+
+            var expectedStudentServiceException =
+                new StudentServiceException(
+                    message: "Student service error occurred, contact support.",
+                    innerException: failedStudentServiceException);
+
+            this.storageBrokerMock.Setup(broker =>
+                broker.SelectAllStudents())
+                    .Throws(serviceException);
+
+            // when
+            Action retrieveAllStudentsAction = () =>
+                this.studentService.RetrieveAllStudents();
+
+            StudentServiceException actualStudentServiceException =
+                Assert.Throws<StudentServiceException>(retrieveAllStudentsAction);
+
+            // then
+            actualStudentServiceException.Should()
+                .BeEquivalentTo(expectedStudentServiceException);
+
+            this.loggingBrokerMock.Verify(broker =>
+                broker.LogError(It.Is(SameExceptionAs(
+                    expectedStudentServiceException))),
+                        Times.Once);
+
+            this.storageBrokerMock.Verify(broker =>
+                broker.SelectAllStudents(),
+                    Times.Once);
+
+            this.storageBrokerMock.VerifyNoOtherCalls();
+            this.envelopeFactoryMock.VerifyNoOtherCalls();
+            this.eventSubstrateBrokerMock.VerifyNoOtherCalls();
+            this.loggingBrokerMock.VerifyNoOtherCalls();
+        }
+    }
+}

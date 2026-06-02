@@ -2,7 +2,7 @@
 // Copyright (c)  Christo du Toit - All rights reserved.
 // -----------------------------------------------------
 
-namespace StudentApp.Core.Tests.Unit
+namespace StudentApp.Core.Tests.Acceptance
 {
     public class UnitTest1
     {
