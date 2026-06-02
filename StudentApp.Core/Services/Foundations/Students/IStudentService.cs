@@ -2,13 +2,11 @@
 // Copyright (c)  Christo du Toit - All rights reserved.
 // -----------------------------------------------------
 
-using StudentApp.Core.Brokers.EventSubstrates;
-using StudentApp.Core.Models.Events.StudentEvents;
 using StudentApp.Core.Models.Foundations.Students;
 
 namespace StudentApp.Core.Services.Foundations.Students
 {
-    public interface IStudentService : IEventReceiver<StudentEnrolledEvent>
+    public interface IStudentService
     {
         ValueTask<Student> AddStudentAsync(
             Student student,
