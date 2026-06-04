@@ -8,6 +8,7 @@ using System.Linq.Expressions;
 using System.Runtime.Serialization;
 using Microsoft.Data.SqlClient;
 using Moq;
+using StudentApp.Core.Brokers.DateTimes;
 using StudentApp.Core.Brokers.EventSubstrates;
 using StudentApp.Core.Brokers.Loggings;
 using StudentApp.Core.Brokers.Securities;
@@ -28,6 +29,7 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
         private readonly Mock<IEventEnvelopeFactory> envelopeFactoryMock;
         private readonly Mock<ILoggingBroker> loggingBrokerMock;
         private readonly Mock<ISecurityBroker> securityBrokerMock;
+        private readonly Mock<IDateTimeBroker> dateTimeBrokerMock;
         private readonly IEnrollmentService enrollmentService;
 
         public EnrollmentServiceTests()
@@ -37,13 +39,17 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
             this.envelopeFactoryMock = new Mock<IEventEnvelopeFactory>();
             this.loggingBrokerMock = new Mock<ILoggingBroker>();
             this.securityBrokerMock = new Mock<ISecurityBroker>();
+            this.dateTimeBrokerMock = new Mock<IDateTimeBroker>();
+            this.dateTimeBrokerMock.Setup(x => x.GetCurrentDateTimeOffset())
+                .Returns(DateTimeOffset.UtcNow);
 
             this.enrollmentService = new EnrollmentService(
                 storageBroker: this.storageBrokerMock.Object,
                 eventSubstrateBroker: this.eventSubstrateBrokerMock.Object,
                 envelopeFactory: this.envelopeFactoryMock.Object,
                 loggingBroker: this.loggingBrokerMock.Object,
-                securityBroker: this.securityBrokerMock.Object);
+                securityBroker: this.securityBrokerMock.Object,
+                dateTimeBroker: this.dateTimeBrokerMock.Object);
         }
 
         private static Enrollment CreateRandomEnrollment() =>
