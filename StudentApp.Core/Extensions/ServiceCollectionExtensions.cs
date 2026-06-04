@@ -3,6 +3,7 @@
 // -----------------------------------------------------
 
 using Microsoft.Extensions.DependencyInjection;
+using StudentApp.Core.Brokers.DateTimes;
 using StudentApp.Core.Brokers.Emails;
 using StudentApp.Core.Brokers.EventSubstrates;
 using StudentApp.Core.Brokers.Loggings;
@@ -36,6 +37,7 @@ namespace StudentApp.Core.Extensions
             services.AddSingleton<IEventEnvelopeFactory, EventEnvelopeFactory>();
             services.AddSingleton<ILoggingBroker, LoggingBroker>();
             services.AddSingleton<IEmailBroker, EmailBroker>();
+            services.AddSingleton<IDateTimeBroker, DateTimeBroker>();
             services.AddSingleton<IStorageBroker>(_ => new StorageBroker(connectionString));
 
             // Foundation Services

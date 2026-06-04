@@ -33,8 +33,6 @@ namespace StudentApp.Core.Services.Foundations.Notifications
             this.loggingBroker.LogInformation(
                 $"[Substrate] Relaying {StudentEventNames.StudentAdded} to NotificationService for student {envelope.Content.StudentId}");
 
-            await this.emailBroker.SendWelcomeEmailAsync(envelope.Content.StudentId, cancellationToken);
-
             EventEnvelope<WelcomeEmailSentEvent> welcomeEnvelope =
                 new EventEnvelope<WelcomeEmailSentEvent>
                 {
@@ -54,8 +52,6 @@ namespace StudentApp.Core.Services.Foundations.Notifications
         {
             this.loggingBroker.LogInformation(
                 $"[Substrate] Relaying {StudentEventNames.TimetableGenerated} to NotificationService for student {envelope.Content.StudentId}");
-
-            await this.emailBroker.SendTimetableEmailAsync(envelope.Content.StudentId, cancellationToken);
 
             EventEnvelope<TimetableEmailSentEvent> timetableEmailEnvelope =
                 new EventEnvelope<TimetableEmailSentEvent>

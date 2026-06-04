@@ -2,6 +2,7 @@
 // Copyright (c)  Christo du Toit - All rights reserved.
 // -----------------------------------------------------
 
+using StudentApp.Core.Brokers.DateTimes;
 using StudentApp.Core.Brokers.EventSubstrates;
 using StudentApp.Core.Brokers.Loggings;
 using StudentApp.Core.Brokers.Securities;
@@ -20,19 +21,22 @@ namespace StudentApp.Core.Services.Foundations.Enrollments
         private readonly IEventEnvelopeFactory envelopeFactory;
         private readonly ILoggingBroker loggingBroker;
         private readonly ISecurityBroker securityBroker;
+        private readonly IDateTimeBroker dateTimeBroker;
 
         public EnrollmentService(
             IStorageBroker storageBroker,
             IEventSubstrateBroker eventSubstrateBroker,
             IEventEnvelopeFactory envelopeFactory,
             ILoggingBroker loggingBroker,
-            ISecurityBroker securityBroker)
+            ISecurityBroker securityBroker,
+            IDateTimeBroker dateTimeBroker)
         {
             this.storageBroker = storageBroker;
             this.eventSubstrateBroker = eventSubstrateBroker;
             this.envelopeFactory = envelopeFactory;
             this.loggingBroker = loggingBroker;
             this.securityBroker = securityBroker;
+            this.dateTimeBroker = dateTimeBroker;
         }
 
         public ValueTask<Enrollment> AddEnrollmentAsync(
@@ -114,7 +118,7 @@ namespace StudentApp.Core.Services.Foundations.Enrollments
             this.loggingBroker.LogInformation(
                 $"[EnrollmentService] Adding enrollment for student {enrollment.StudentId}");
 
-            enrollment.EnrolledAt = DateTimeOffset.UtcNow;
+            enrollment.EnrolledAt = this.dateTimeBroker.GetCurrentDateTimeOffset();
             enrollment.Status = "Active";
 
             Enrollment addedEnrollment =
