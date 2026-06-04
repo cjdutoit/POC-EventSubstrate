@@ -14,11 +14,7 @@ namespace StudentApp.Core.Models.Events
     /// <typeparam name="T">The type of the domain event content payload.</typeparam>
     public sealed class EventEnvelope<T>
     {
-        /// <summary>
-        /// The name of the event, used for routing and dispatching to handlers.
-        /// </summary>
         public string EventName => this.Metadata.EventType;
-
         public DateTimeOffset OccurredAt => this.Metadata.OccurredAt;
 
         /// <summary>

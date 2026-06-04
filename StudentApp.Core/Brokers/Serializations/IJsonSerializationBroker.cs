@@ -2,9 +2,10 @@
 // Copyright (c)  Christo du Toit - All rights reserved.
 // -----------------------------------------------------
 
-namespace StudentApp.Core.Brokers.Storages
+namespace StudentApp.Core.Brokers.Serializations
 {
-    public partial interface IStorageBroker
-    { }
+    public interface IJsonSerializationBroker
+    {
+        ValueTask<string> SerializeAsync<T>(T value);
+    }
 }
-

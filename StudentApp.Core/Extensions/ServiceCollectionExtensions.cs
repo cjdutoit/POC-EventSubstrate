@@ -8,6 +8,7 @@ using StudentApp.Core.Brokers.Emails;
 using StudentApp.Core.Brokers.EventSubstrates;
 using StudentApp.Core.Brokers.Loggings;
 using StudentApp.Core.Brokers.Securities;
+using StudentApp.Core.Brokers.Serializations;
 using StudentApp.Core.Brokers.Storages;
 using StudentApp.Core.Models.Events.StudentEvents;
 using StudentApp.Core.Services.Foundations.Enrollments;
@@ -38,6 +39,7 @@ namespace StudentApp.Core.Extensions
             services.AddSingleton<ILoggingBroker, LoggingBroker>();
             services.AddSingleton<IEmailBroker, EmailBroker>();
             services.AddSingleton<IDateTimeBroker, DateTimeBroker>();
+            services.AddSingleton<IJsonSerializationBroker, JsonSerializationBroker>();
             services.AddSingleton<IStorageBroker>(_ => new StorageBroker(connectionString));
 
             // Foundation Services

@@ -5,6 +5,7 @@
 using StudentApp.Core.Brokers.EventSubstrates;
 using StudentApp.Core.Models.Events;
 using StudentApp.Core.Models.Events.StudentEvents;
+using StudentApp.Core.Models.Foundations.ProcessedEvents;
 
 namespace StudentApp.Core.Services.Foundations.Notifications
 {
@@ -12,24 +13,36 @@ namespace StudentApp.Core.Services.Foundations.Notifications
         IEventReceiver<StudentAddedEvent>,
         IEventReceiver<TimetableGeneratedEvent>
     {
-        async ValueTask IEventReceiver<StudentAddedEvent>.ReceiveAsync(
+        ValueTask IEventReceiver<StudentAddedEvent>.ReceiveAsync(
             EventEnvelope<StudentAddedEvent> envelope,
-            CancellationToken cancellationToken)
-        {
-            await HandleStudentCreatedAsync(envelope, cancellationToken);
-        }
+            CancellationToken cancellationToken) =>
+        TryCatch(
+            async () => await HandleStudentCreatedAsync(envelope, cancellationToken),
+            envelope,
+            cancellationToken);
 
-        async ValueTask IEventReceiver<TimetableGeneratedEvent>.ReceiveAsync(
+        ValueTask IEventReceiver<TimetableGeneratedEvent>.ReceiveAsync(
             EventEnvelope<TimetableGeneratedEvent> envelope,
-            CancellationToken cancellationToken)
-        {
-            await HandleTimetableGeneratedAsync(envelope, cancellationToken);
-        }
+            CancellationToken cancellationToken) =>
+        TryCatch(
+            async () => await HandleTimetableGeneratedAsync(envelope, cancellationToken),
+            envelope,
+            cancellationToken);
 
         private async ValueTask HandleStudentCreatedAsync(
             EventEnvelope<StudentAddedEvent> envelope,
             CancellationToken cancellationToken)
         {
+            ValidateStudentAddedEnvelope(envelope);
+
+            bool alreadyProcessed = await this.storageBroker.SelectProcessedEventExistsAsync(
+                envelope.Metadata.EventId,
+                nameof(NotificationService),
+                cancellationToken);
+
+            if (alreadyProcessed)
+                return;
+
             this.loggingBroker.LogInformation(
                 $"[Substrate] Relaying {StudentEventNames.StudentAdded} to NotificationService for student {envelope.Content.StudentId}");
 
@@ -44,12 +57,32 @@ namespace StudentApp.Core.Services.Foundations.Notifications
                 };
 
             await DoSendWelcomeEmailAsync(welcomeEnvelope, cancellationToken);
+
+            await this.storageBroker.InsertProcessedEventAsync(
+                new ProcessedEvent
+                {
+                    Id = Guid.NewGuid(),
+                    EventId = envelope.Metadata.EventId,
+                    ReceiverName = nameof(NotificationService),
+                    ProcessedAt = this.dateTimeBroker.GetCurrentDateTimeOffset()
+                },
+                cancellationToken);
         }
 
         private async ValueTask HandleTimetableGeneratedAsync(
             EventEnvelope<TimetableGeneratedEvent> envelope,
             CancellationToken cancellationToken)
         {
+            ValidateTimetableGeneratedEnvelope(envelope);
+
+            bool alreadyProcessed = await this.storageBroker.SelectProcessedEventExistsAsync(
+                envelope.Metadata.EventId,
+                nameof(NotificationService),
+                cancellationToken);
+
+            if (alreadyProcessed)
+                return;
+
             this.loggingBroker.LogInformation(
                 $"[Substrate] Relaying {StudentEventNames.TimetableGenerated} to NotificationService for student {envelope.Content.StudentId}");
 
@@ -64,6 +97,16 @@ namespace StudentApp.Core.Services.Foundations.Notifications
                 };
 
             await DoSendTimetableEmailAsync(timetableEmailEnvelope, cancellationToken);
+
+            await this.storageBroker.InsertProcessedEventAsync(
+                new ProcessedEvent
+                {
+                    Id = Guid.NewGuid(),
+                    EventId = envelope.Metadata.EventId,
+                    ReceiverName = nameof(NotificationService),
+                    ProcessedAt = this.dateTimeBroker.GetCurrentDateTimeOffset()
+                },
+                cancellationToken);
         }
     }
 }

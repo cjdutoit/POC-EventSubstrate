@@ -2,9 +2,12 @@
 // Copyright (c)  Christo du Toit - All rights reserved.
 // -----------------------------------------------------
 
+using StudentApp.Core.Brokers.DateTimes;
 using StudentApp.Core.Brokers.EventSubstrates;
 using StudentApp.Core.Brokers.Loggings;
 using StudentApp.Core.Brokers.Securities;
+using StudentApp.Core.Brokers.Serializations;
+using StudentApp.Core.Brokers.Storages;
 using StudentApp.Core.Models.Events;
 using StudentApp.Core.Models.Events.StudentEvents;
 
@@ -12,21 +15,30 @@ namespace StudentApp.Core.Services.Foundations.Timetables
 {
     public sealed partial class TimetableService : ITimetableService
     {
+        private readonly IStorageBroker storageBroker;
         private readonly IEventSubstrateBroker eventSubstrateBroker;
         private readonly IEventEnvelopeFactory envelopeFactory;
         private readonly ILoggingBroker loggingBroker;
         private readonly ISecurityBroker securityBroker;
+        private readonly IDateTimeBroker dateTimeBroker;
+        private readonly IJsonSerializationBroker jsonSerializationBroker;
 
         public TimetableService(
+            IStorageBroker storageBroker,
             IEventSubstrateBroker eventSubstrateBroker,
             IEventEnvelopeFactory envelopeFactory,
             ILoggingBroker loggingBroker,
-            ISecurityBroker securityBroker)
+            ISecurityBroker securityBroker,
+            IDateTimeBroker dateTimeBroker,
+            IJsonSerializationBroker jsonSerializationBroker)
         {
+            this.storageBroker = storageBroker;
             this.eventSubstrateBroker = eventSubstrateBroker;
             this.envelopeFactory = envelopeFactory;
             this.loggingBroker = loggingBroker;
             this.securityBroker = securityBroker;
+            this.dateTimeBroker = dateTimeBroker;
+            this.jsonSerializationBroker = jsonSerializationBroker;
         }
 
         public ValueTask GenerateTimetableAsync(

@@ -5,23 +5,36 @@
 using StudentApp.Core.Brokers.EventSubstrates;
 using StudentApp.Core.Models.Events;
 using StudentApp.Core.Models.Events.StudentEvents;
+using StudentApp.Core.Models.Foundations.ProcessedEvents;
 
 namespace StudentApp.Core.Services.Foundations.Timetables
 {
     public sealed partial class TimetableService :
         IEventReceiver<StudentEnrolledEvent>
     {
-        async ValueTask IEventReceiver<StudentEnrolledEvent>.ReceiveAsync(
+        ValueTask IEventReceiver<StudentEnrolledEvent>.ReceiveAsync(
             EventEnvelope<StudentEnrolledEvent> envelope,
-            CancellationToken cancellationToken)
-        {
-            await HandleStudentEnrolledAsync(envelope, cancellationToken);
-        }
+            CancellationToken cancellationToken) =>
+        TryCatch(
+            async () => await HandleStudentEnrolledAsync(envelope, cancellationToken),
+            envelope,
+            cancellationToken);
 
         private async ValueTask HandleStudentEnrolledAsync(
             EventEnvelope<StudentEnrolledEvent> envelope,
             CancellationToken cancellationToken)
         {
+            ValidateEnvelopeIsNotNull(envelope);
+            ValidateEnvelopeContent(envelope);
+
+            bool alreadyProcessed = await this.storageBroker.SelectProcessedEventExistsAsync(
+                envelope.Metadata.EventId,
+                nameof(TimetableService),
+                cancellationToken);
+
+            if (alreadyProcessed)
+                return;
+
             this.loggingBroker.LogInformation(
                 $"[Substrate] Relaying {StudentEventNames.StudentEnrolled} to TimetableService " +
                     $"for student {envelope.Content.StudentId}");
@@ -37,6 +50,16 @@ namespace StudentApp.Core.Services.Foundations.Timetables
                 };
 
             await DoGenerateTimetableAsync(timetableEnvelope, cancellationToken);
+
+            await this.storageBroker.InsertProcessedEventAsync(
+                new ProcessedEvent
+                {
+                    Id = Guid.NewGuid(),
+                    EventId = envelope.Metadata.EventId,
+                    ReceiverName = nameof(TimetableService),
+                    ProcessedAt = this.dateTimeBroker.GetCurrentDateTimeOffset()
+                },
+                cancellationToken);
         }
     }
 }
