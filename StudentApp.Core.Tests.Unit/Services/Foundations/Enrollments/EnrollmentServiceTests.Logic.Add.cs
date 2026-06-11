@@ -34,6 +34,14 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
             var securityContext = new SecurityContext();
 
             this.securityBrokerMock.Setup(broker =>
+                broker.ApplyAddAuditValuesAsync(It.IsAny<Enrollment>()))
+                    .ReturnsAsync(inputEnrollment);
+
+            this.securityBrokerMock.Setup(broker =>
+                broker.GetUserIdAsync())
+                    .ReturnsAsync(inputEnrollment.CreatedBy);
+
+            this.securityBrokerMock.Setup(broker =>
                 broker.GetCurrentSecurityContextAsync())
                     .ReturnsAsync(securityContext);
 
@@ -126,6 +134,14 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
             this.storageBrokerMock.VerifyNoOtherCalls();
             this.envelopeFactoryMock.VerifyNoOtherCalls();
             this.eventSubstrateBrokerMock.VerifyNoOtherCalls();
+
+            this.securityBrokerMock.Verify(broker =>
+                broker.ApplyAddAuditValuesAsync(It.IsAny<Enrollment>()),
+                Times.Once);
+
+            this.securityBrokerMock.Verify(broker =>
+                broker.GetUserIdAsync(),
+                Times.Once);
 
             this.securityBrokerMock.Verify(broker =>
                 broker.GetCurrentSecurityContextAsync(),

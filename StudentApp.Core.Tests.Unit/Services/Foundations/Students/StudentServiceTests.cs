@@ -68,12 +68,22 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
 
         private static Filler<Student> CreateStudentFiller()
         {
+            string userId = GetRandomString();
+            DateTimeOffset dateTimeOffset = DateTimeOffset.UtcNow;
             var filler = new Filler<Student>();
 
             filler.Setup()
                 .OnProperty(s => s.Id).Use(Guid.NewGuid())
                 .OnProperty(s => s.DateOfBirth).Use(DateOnly.FromDateTime(DateTime.Now))
-                .OnProperty(s => s.Status).Use(string.Empty);
+                .OnProperty(s => s.Status).Use(string.Empty)
+                .OnProperty(s => s.CreatedBy).Use(userId)
+                .OnProperty(s => s.UpdatedBy).Use(userId)
+                .OnProperty(s => s.CreatedWhen).Use(dateTimeOffset)
+                .OnProperty(s => s.UpdatedWhen).Use(dateTimeOffset)
+                .OnProperty(s => s.IsDeleted).Use(false)
+                .OnProperty(s => s.DeletedBy).Use((string?)null)
+                .OnProperty(s => s.DeletedWhen).Use((DateTimeOffset?)null)
+                .OnProperty(s => s.DeletionReason).Use((string?)null);
 
             return filler;
         }

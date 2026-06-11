@@ -57,7 +57,7 @@ namespace StudentApp.Core.Services.Foundations.Timetables
                     Id = Guid.NewGuid(),
                     EventId = envelope.Metadata.EventId,
                     ReceiverName = nameof(TimetableService),
-                    ProcessedAt = this.dateTimeBroker.GetCurrentDateTimeOffset()
+                    ProcessedAt = await this.dateTimeBroker.GetCurrentDateTimeOffsetAsync()
                 },
                 cancellationToken);
         }

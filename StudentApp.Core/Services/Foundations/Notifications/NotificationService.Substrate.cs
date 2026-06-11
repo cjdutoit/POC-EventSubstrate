@@ -44,7 +44,8 @@ namespace StudentApp.Core.Services.Foundations.Notifications
                 return;
 
             this.loggingBroker.LogInformation(
-                $"[Substrate] Relaying {StudentEventNames.StudentAdded} to NotificationService for student {envelope.Content.StudentId}");
+                $"[Substrate] Relaying {StudentEventNames.StudentAdded} to NotificationService " +
+                    $"for student {envelope.Content.StudentId}");
 
             EventEnvelope<WelcomeEmailSentEvent> welcomeEnvelope =
                 new EventEnvelope<WelcomeEmailSentEvent>
@@ -64,7 +65,7 @@ namespace StudentApp.Core.Services.Foundations.Notifications
                     Id = Guid.NewGuid(),
                     EventId = envelope.Metadata.EventId,
                     ReceiverName = nameof(NotificationService),
-                    ProcessedAt = this.dateTimeBroker.GetCurrentDateTimeOffset()
+                    ProcessedAt = await this.dateTimeBroker.GetCurrentDateTimeOffsetAsync()
                 },
                 cancellationToken);
         }
@@ -104,7 +105,7 @@ namespace StudentApp.Core.Services.Foundations.Notifications
                     Id = Guid.NewGuid(),
                     EventId = envelope.Metadata.EventId,
                     ReceiverName = nameof(NotificationService),
-                    ProcessedAt = this.dateTimeBroker.GetCurrentDateTimeOffset()
+                    ProcessedAt = await this.dateTimeBroker.GetCurrentDateTimeOffsetAsync()
                 },
                 cancellationToken);
         }

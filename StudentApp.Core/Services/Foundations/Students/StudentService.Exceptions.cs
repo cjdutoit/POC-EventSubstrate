@@ -152,7 +152,7 @@ namespace StudentApp.Core.Services.Foundations.Students
                     ReceiverServiceName = nameof(StudentService),
                     ErrorMessage = exception.Message,
                     ErrorStackTrace = exception.StackTrace,
-                    FailedAt = this.dateTimeBroker.GetCurrentDateTimeOffset()
+                    FailedAt = await this.dateTimeBroker.GetCurrentDateTimeOffsetAsync()
                 };
 
                 EventEnvelope<ReactionFailedEvent> failureEnvelope =

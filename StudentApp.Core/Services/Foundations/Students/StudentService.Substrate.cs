@@ -49,11 +49,8 @@ namespace StudentApp.Core.Services.Foundations.Students
                 return;
 
             maybeStudent.Status = "Enrolled";
-
-            // We need to reflect who made the change and when
-            // Design decision to use the OriginatedAt or the current time.
-            // maybeStudent.UpdatedBy = envelope.SecurityContext.Username ?? envelope.SecurityContext.ClientId;
-            // maybeStudent.UpdatedWhen = await this.dateTimeBroker.GetCurrentDateTimeOffsetAsync();
+            maybeStudent.UpdatedBy = envelope.SecurityContext.Username ?? envelope.SecurityContext.ClientId;
+            maybeStudent.UpdatedWhen = await this.dateTimeBroker.GetCurrentDateTimeOffsetAsync();
 
             EventEnvelope<StudentModifiedEvent> enrolledEnvelope =
                 new EventEnvelope<StudentModifiedEvent>
@@ -81,7 +78,7 @@ namespace StudentApp.Core.Services.Foundations.Students
                     Id = Guid.NewGuid(),
                     EventId = envelope.Metadata.EventId,
                     ReceiverName = nameof(StudentService),
-                    ProcessedAt = this.dateTimeBroker.GetCurrentDateTimeOffset()
+                    ProcessedAt = await this.dateTimeBroker.GetCurrentDateTimeOffsetAsync()
                 },
                 cancellationToken);
         }

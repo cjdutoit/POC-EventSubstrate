@@ -52,7 +52,7 @@ namespace StudentApp.Core.Brokers.Storages
         private async ValueTask<T> SelectByIdAsync<T>(object[] objectIds, CancellationToken cancellationToken = default)
             where T : class
         {
-            return await this.Set<T>().FindAsync(objectIds, cancellationToken);
+            return (await this.Set<T>().FindAsync(objectIds, cancellationToken))!;
         }
 
         private IQueryable<T> SelectAll<T>() where T : class =>
