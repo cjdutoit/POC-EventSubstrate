@@ -13,5 +13,6 @@ namespace StudentApp.Core.Models.Events.StudentEvents
         public const string TimetableGenerated = "TimetableGeneratedEvent";
         public const string WelcomeEmailSent = "WelcomeEmailSentEvent";
         public const string TimetableEmailSent = "TimetableEmailSentEvent";
+        public const string ReactionFailed = "ReactionFailedEvent";
     }
 }

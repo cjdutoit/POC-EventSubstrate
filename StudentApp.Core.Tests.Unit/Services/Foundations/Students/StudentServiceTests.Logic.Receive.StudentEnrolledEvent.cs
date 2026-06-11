@@ -9,7 +9,9 @@ using Moq;
 using StudentApp.Core.Brokers.EventSubstrates;
 using StudentApp.Core.Models.Events;
 using StudentApp.Core.Models.Events.StudentEvents;
+using StudentApp.Core.Models.Foundations.ProcessedEvents;
 using StudentApp.Core.Models.Foundations.Students;
+using StudentApp.Core.Services.Foundations.Students;
 using Xunit;
 
 namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
@@ -75,6 +77,13 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
 
             // then
             this.storageBrokerMock.Verify(broker =>
+                broker.SelectProcessedEventExistsAsync(
+                    It.IsAny<Guid>(),
+                    nameof(StudentService),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+
+            this.storageBrokerMock.Verify(broker =>
                 broker.SelectStudentByIdAsync(
                     randomStudent.Id,
                     It.IsAny<CancellationToken>()),
@@ -83,6 +92,12 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
             this.storageBrokerMock.Verify(broker =>
                 broker.UpdateStudentAsync(
                     It.IsAny<Student>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+
+            this.storageBrokerMock.Verify(broker =>
+                broker.InsertProcessedEventAsync(
+                    It.IsAny<ProcessedEvent>(),
                     It.IsAny<CancellationToken>()),
                 Times.Once);
 
@@ -145,6 +160,13 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
             await eventReceiver.ReceiveAsync(inputEnvelope, CancellationToken.None);
 
             // then
+            this.storageBrokerMock.Verify(broker =>
+                broker.SelectProcessedEventExistsAsync(
+                    It.IsAny<Guid>(),
+                    nameof(StudentService),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+
             this.storageBrokerMock.Verify(broker =>
                 broker.SelectStudentByIdAsync(
                     nonExistentStudentId,

@@ -6,6 +6,6 @@ namespace StudentApp.Core.Brokers.DateTimes
 {
     public interface IDateTimeBroker
     {
-        DateTimeOffset GetCurrentDateTimeOffset();
+        ValueTask<DateTimeOffset> GetCurrentDateTimeOffsetAsync();
     }
 }

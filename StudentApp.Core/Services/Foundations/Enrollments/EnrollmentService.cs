@@ -45,7 +45,9 @@ namespace StudentApp.Core.Services.Foundations.Enrollments
             TryCatch(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                ValidateEnrollmentOnAdd(enrollment);
+                enrollment = await this.securityBroker.ApplyAddAuditValuesAsync(enrollment);
+                string currentUserId = await this.securityBroker.GetUserIdAsync();
+                await ValidateEnrollmentOnAddAsync(enrollment, currentUserId);
                 SecurityContext securityContext = await this.securityBroker.GetCurrentSecurityContextAsync();
 
                 return await DoAddEnrollmentAsync(enrollment, securityContext, cancellationToken);
@@ -78,7 +80,9 @@ namespace StudentApp.Core.Services.Foundations.Enrollments
             TryCatch(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                ValidateEnrollmentOnModify(enrollment);
+                enrollment = await this.securityBroker.ApplyModifyAuditValuesAsync(enrollment);
+                string currentUserId = await this.securityBroker.GetUserIdAsync();
+                await ValidateEnrollmentOnModifyAsync(enrollment, currentUserId);
 
                 Enrollment maybeEnrollment =
                     await this.storageBroker.SelectEnrollmentByIdAsync(
@@ -118,7 +122,7 @@ namespace StudentApp.Core.Services.Foundations.Enrollments
             this.loggingBroker.LogInformation(
                 $"[EnrollmentService] Adding enrollment for student {enrollment.StudentId}");
 
-            enrollment.EnrolledAt = this.dateTimeBroker.GetCurrentDateTimeOffset();
+            enrollment.EnrolledAt = await this.dateTimeBroker.GetCurrentDateTimeOffsetAsync();
             enrollment.Status = "Active";
 
             Enrollment addedEnrollment =

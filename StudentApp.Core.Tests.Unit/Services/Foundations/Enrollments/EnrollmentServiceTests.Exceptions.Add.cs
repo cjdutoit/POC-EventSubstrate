@@ -1,4 +1,4 @@
-// -----------------------------------------------------
+﻿// -----------------------------------------------------
 // Copyright (c)  Christo du Toit - All rights reserved.
 // -----------------------------------------------------
 
@@ -35,6 +35,14 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
                 new EnrollmentDependencyException(
                     message: "Enrollment dependency error occurred, contact support.",
                     innerException: failedEnrollmentStorageException);
+
+            this.securityBrokerMock.Setup(broker =>
+                broker.ApplyAddAuditValuesAsync(It.IsAny<Enrollment>()))
+                    .ReturnsAsync(randomEnrollment);
+
+            this.securityBrokerMock.Setup(broker =>
+                broker.GetUserIdAsync())
+                    .ReturnsAsync(randomEnrollment.CreatedBy);
 
             this.securityBrokerMock.Setup(broker =>
                 broker.GetCurrentSecurityContextAsync())
@@ -75,6 +83,14 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
                         Times.Once);
 
             this.securityBrokerMock.Verify(broker =>
+                broker.ApplyAddAuditValuesAsync(It.IsAny<Enrollment>()),
+                Times.Once);
+
+            this.securityBrokerMock.Verify(broker =>
+                broker.GetUserIdAsync(),
+                Times.Once);
+
+            this.securityBrokerMock.Verify(broker =>
                 broker.GetCurrentSecurityContextAsync(),
                     Times.Once);
 
@@ -105,6 +121,14 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
                 new EnrollmentDependencyValidationException(
                     message: "Enrollment dependency validation error occurred, fix the errors and try again.",
                     innerException: alreadyExistsEnrollmentException);
+
+            this.securityBrokerMock.Setup(broker =>
+                broker.ApplyAddAuditValuesAsync(It.IsAny<Enrollment>()))
+                    .ReturnsAsync(randomEnrollment);
+
+            this.securityBrokerMock.Setup(broker =>
+                broker.GetUserIdAsync())
+                    .ReturnsAsync(randomEnrollment.CreatedBy);
 
             this.securityBrokerMock.Setup(broker =>
                 broker.GetCurrentSecurityContextAsync())
@@ -145,6 +169,14 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
                         Times.Once);
 
             this.securityBrokerMock.Verify(broker =>
+                broker.ApplyAddAuditValuesAsync(It.IsAny<Enrollment>()),
+                Times.Once);
+
+            this.securityBrokerMock.Verify(broker =>
+                broker.GetUserIdAsync(),
+                Times.Once);
+
+            this.securityBrokerMock.Verify(broker =>
                 broker.GetCurrentSecurityContextAsync(),
                     Times.Once);
 
@@ -174,6 +206,14 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
                 new EnrollmentDependencyValidationException(
                     message: "Enrollment dependency validation error occurred, fix the errors and try again.",
                     innerException: lockedEnrollmentException);
+
+            this.securityBrokerMock.Setup(broker =>
+                broker.ApplyAddAuditValuesAsync(It.IsAny<Enrollment>()))
+                    .ReturnsAsync(randomEnrollment);
+
+            this.securityBrokerMock.Setup(broker =>
+                broker.GetUserIdAsync())
+                    .ReturnsAsync(randomEnrollment.CreatedBy);
 
             this.securityBrokerMock.Setup(broker =>
                 broker.GetCurrentSecurityContextAsync())
@@ -214,6 +254,14 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
                         Times.Once);
 
             this.securityBrokerMock.Verify(broker =>
+                broker.ApplyAddAuditValuesAsync(It.IsAny<Enrollment>()),
+                Times.Once);
+
+            this.securityBrokerMock.Verify(broker =>
+                broker.GetUserIdAsync(),
+                Times.Once);
+
+            this.securityBrokerMock.Verify(broker =>
                 broker.GetCurrentSecurityContextAsync(),
                     Times.Once);
 
@@ -241,6 +289,14 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
                 new EnrollmentServiceException(
                     message: "Enrollment service error occurred, contact support.",
                     innerException: failedEnrollmentServiceException);
+
+            this.securityBrokerMock.Setup(broker =>
+                broker.ApplyAddAuditValuesAsync(It.IsAny<Enrollment>()))
+                    .ReturnsAsync(randomEnrollment);
+
+            this.securityBrokerMock.Setup(broker =>
+                broker.GetUserIdAsync())
+                    .ReturnsAsync(randomEnrollment.CreatedBy);
 
             this.securityBrokerMock.Setup(broker =>
                 broker.GetCurrentSecurityContextAsync())
@@ -281,6 +337,14 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
                         Times.Once);
 
             this.securityBrokerMock.Verify(broker =>
+                broker.ApplyAddAuditValuesAsync(It.IsAny<Enrollment>()),
+                Times.Once);
+
+            this.securityBrokerMock.Verify(broker =>
+                broker.GetUserIdAsync(),
+                Times.Once);
+
+            this.securityBrokerMock.Verify(broker =>
                 broker.GetCurrentSecurityContextAsync(),
                     Times.Once);
 
@@ -292,3 +356,5 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Enrollments
         }
     }
 }
+
+

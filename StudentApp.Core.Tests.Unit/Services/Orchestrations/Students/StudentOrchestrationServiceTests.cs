@@ -40,18 +40,30 @@ namespace StudentApp.Core.Tests.Unit.Services.Orchestrations.Students
 
         private static Filler<Student> CreateStudentFiller()
         {
+            string userId = new MnemonicString(1).GetValue();
+            DateTimeOffset dateTimeOffset = DateTimeOffset.UtcNow;
             var filler = new Filler<Student>();
 
             filler.Setup()
                 .OnProperty(s => s.Id).Use(Guid.NewGuid())
                 .OnProperty(s => s.DateOfBirth).Use(DateOnly.FromDateTime(DateTime.Now))
-                .OnProperty(s => s.Status).Use(string.Empty);
+                .OnProperty(s => s.Status).Use(string.Empty)
+                .OnProperty(s => s.CreatedBy).Use(userId)
+                .OnProperty(s => s.UpdatedBy).Use(userId)
+                .OnProperty(s => s.CreatedWhen).Use(dateTimeOffset)
+                .OnProperty(s => s.UpdatedWhen).Use(dateTimeOffset)
+                .OnProperty(s => s.IsDeleted).Use(false)
+                .OnProperty(s => s.DeletedBy).Use((string?)null)
+                .OnProperty(s => s.DeletedWhen).Use((DateTimeOffset?)null)
+                .OnProperty(s => s.DeletionReason).Use((string?)null);
 
             return filler;
         }
 
         private static Enrollment CreateRandomEnrollment(Guid studentId)
         {
+            string userId = new MnemonicString(1).GetValue();
+            DateTimeOffset dateTimeOffset = DateTimeOffset.UtcNow;
             var filler = new Filler<Enrollment>();
 
             filler.Setup()
@@ -59,7 +71,15 @@ namespace StudentApp.Core.Tests.Unit.Services.Orchestrations.Students
                 .OnProperty(e => e.StudentId).Use(studentId)
                 .OnProperty(e => e.CourseCode).Use("DEFAULT-101")
                 .OnProperty(e => e.Status).Use("Active")
-                .OnType<DateTimeOffset>().Use(DateTimeOffset.UtcNow);
+                .OnProperty(e => e.CreatedBy).Use(userId)
+                .OnProperty(e => e.UpdatedBy).Use(userId)
+                .OnProperty(e => e.CreatedWhen).Use(dateTimeOffset)
+                .OnProperty(e => e.UpdatedWhen).Use(dateTimeOffset)
+                .OnProperty(e => e.IsDeleted).Use(false)
+                .OnProperty(e => e.DeletedBy).Use((string?)null)
+                .OnProperty(e => e.DeletedWhen).Use((DateTimeOffset?)null)
+                .OnProperty(e => e.DeletionReason).Use((string?)null)
+                .OnType<DateTimeOffset>().Use(dateTimeOffset);
 
             return filler.Create();
         }

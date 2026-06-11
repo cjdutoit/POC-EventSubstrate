@@ -5,11 +5,12 @@
 using EFxceptions;
 using Microsoft.EntityFrameworkCore;
 using StudentApp.Core.Models.Foundations.Enrollments;
+using StudentApp.Core.Models.Foundations.ProcessedEvents;
 using StudentApp.Core.Models.Foundations.Students;
 
 namespace StudentApp.Core.Brokers.Storages
 {
-    public sealed class StorageBroker : EFxceptionsContext, IStorageBroker
+    public partial class StorageBroker : EFxceptionsContext, IStorageBroker
     {
         private readonly string connectionString;
 
@@ -20,6 +21,7 @@ namespace StudentApp.Core.Brokers.Storages
 
         public DbSet<Student> Students { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
+        public DbSet<ProcessedEvent> ProcessedEvents { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -28,121 +30,48 @@ namespace StudentApp.Core.Brokers.Storages
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Student>(entity =>
-            {
-                entity.HasKey(s => s.Id);
-
-                entity.Property(s => s.FirstName)
-                    .IsRequired()
-                    .HasMaxLength(100);
-
-                entity.Property(s => s.LastName)
-                    .IsRequired()
-                    .HasMaxLength(100);
-
-                entity.Property(s => s.Email)
-                    .IsRequired()
-                    .HasMaxLength(200);
-
-                entity.Property(s => s.Status)
-                    .HasMaxLength(50);
-            });
-
-            modelBuilder.Entity<Enrollment>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-
-                entity.Property(e => e.CourseCode)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.Property(e => e.Status)
-                    .HasMaxLength(50);
-            });
+            base.OnModelCreating(modelBuilder);
+            AddConfigurations(modelBuilder);
         }
 
-        public async ValueTask<Student> InsertStudentAsync(
-            Student student,
-            CancellationToken cancellationToken = default)
+        private static void AddConfigurations(ModelBuilder modelBuilder)
         {
-            this.Entry(student).State = EntityState.Added;
+            AddStudentConfigurations(modelBuilder.Entity<Student>());
+            AddEnrollmentConfigurations(modelBuilder.Entity<Enrollment>());
+            AddProcessedEventConfigurations(modelBuilder.Entity<ProcessedEvent>());
+        }
+
+        private async ValueTask<T> InsertAsync<T>(T @object, CancellationToken cancellationToken = default)
+            where T : class
+        {
+            this.Entry(@object).State = EntityState.Added;
             await this.SaveChangesAsync(cancellationToken);
-
-            return student;
+            return @object;
         }
 
-        public IQueryable<Student> SelectAllStudents() =>
-            this.Students.AsNoTracking();
-
-        public async ValueTask<Student> SelectStudentByIdAsync(
-            Guid studentId,
-            CancellationToken cancellationToken = default)
+        private async ValueTask<T> SelectByIdAsync<T>(object[] objectIds, CancellationToken cancellationToken = default)
+            where T : class
         {
-            return await this.Students.FindAsync(
-                new object[] { studentId },
-                cancellationToken);
+            return (await this.Set<T>().FindAsync(objectIds, cancellationToken))!;
         }
 
-        public async ValueTask<Student> UpdateStudentAsync(
-            Student student,
-            CancellationToken cancellationToken = default)
+        private IQueryable<T> SelectAll<T>() where T : class =>
+            this.Set<T>().AsNoTracking();
+
+        private async ValueTask<T> UpdateAsync<T>(T @object, CancellationToken cancellationToken = default)
+            where T : class
         {
-            this.Entry(student).State = EntityState.Modified;
+            this.Entry(@object).State = EntityState.Modified;
             await this.SaveChangesAsync(cancellationToken);
-
-            return student;
+            return @object;
         }
 
-        public async ValueTask<Student> DeleteStudentAsync(
-            Student student,
-            CancellationToken cancellationToken = default)
+        private async ValueTask<T> DeleteAsync<T>(T @object, CancellationToken cancellationToken = default)
+            where T : class
         {
-            this.Entry(student).State = EntityState.Deleted;
+            this.Entry(@object).State = EntityState.Deleted;
             await this.SaveChangesAsync(cancellationToken);
-
-            return student;
-        }
-
-        public async ValueTask<Enrollment> InsertEnrollmentAsync(
-            Enrollment enrollment,
-            CancellationToken cancellationToken = default)
-        {
-            this.Entry(enrollment).State = EntityState.Added;
-            await this.SaveChangesAsync(cancellationToken);
-
-            return enrollment;
-        }
-
-        public IQueryable<Enrollment> SelectAllEnrollments() =>
-            this.Enrollments.AsNoTracking();
-
-        public async ValueTask<Enrollment> SelectEnrollmentByIdAsync(
-            Guid enrollmentId,
-            CancellationToken cancellationToken = default)
-        {
-            return await this.Enrollments.FindAsync(
-                new object[] { enrollmentId },
-                cancellationToken);
-        }
-
-        public async ValueTask<Enrollment> UpdateEnrollmentAsync(
-            Enrollment enrollment,
-            CancellationToken cancellationToken = default)
-        {
-            this.Entry(enrollment).State = EntityState.Modified;
-            await this.SaveChangesAsync(cancellationToken);
-
-            return enrollment;
-        }
-
-        public async ValueTask<Enrollment> DeleteEnrollmentAsync(
-            Enrollment enrollment,
-            CancellationToken cancellationToken = default)
-        {
-            this.Entry(enrollment).State = EntityState.Deleted;
-            await this.SaveChangesAsync(cancellationToken);
-
-            return enrollment;
+            return @object;
         }
     }
 }
