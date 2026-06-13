@@ -75,14 +75,6 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
                     message: "Student validation error occurred, fix the errors and try again.",
                     innerException: notFoundStudentException);
 
-            this.envelopeFactoryMock.Setup(factory =>
-                factory.CreateAsync(
-                    It.IsAny<StudentModifiedEvent>(),
-                    StudentEventNames.StudentModified,
-                    It.IsAny<SecurityContext>(),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateStudentModifiedEnvelope(inputStudent));
-
             this.storageBrokerMock.Setup(broker =>
                 broker.SelectStudentByIdAsync(inputStudent.Id, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(noStudent);
@@ -114,18 +106,13 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
                     StudentEventNames.StudentModified,
                     It.IsAny<SecurityContext>(),
                     It.IsAny<CancellationToken>()),
-                Times.Once);
+                Times.Never);
 
             this.storageBrokerMock.Verify(broker =>
                 broker.UpdateStudentAsync(
                     It.IsAny<Student>(),
                     It.IsAny<CancellationToken>()),
                         Times.Never);
-
-            this.loggingBrokerMock.Verify(broker =>
-                broker.LogInformation(
-                    It.Is<string>(msg => msg.Contains(inputStudent.Id.ToString()))),
-                Times.AtLeastOnce);
 
             this.storageBrokerMock.VerifyNoOtherCalls();
             this.envelopeFactoryMock.VerifyNoOtherCalls();

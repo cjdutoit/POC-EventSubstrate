@@ -36,14 +36,6 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
                     message: "Student dependency error occurred, contact support.",
                     innerException: failedStudentStorageException);
 
-            this.envelopeFactoryMock.Setup(factory =>
-                factory.CreateAsync(
-                    It.IsAny<StudentModifiedEvent>(),
-                    StudentEventNames.StudentModified,
-                    It.IsAny<SecurityContext>(),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateStudentModifiedEnvelope(randomStudent));
-
             this.storageBrokerMock.Setup(broker =>
                 broker.SelectStudentByIdAsync(
                     randomStudent.Id,
@@ -79,12 +71,7 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
                     StudentEventNames.StudentModified,
                     It.IsAny<SecurityContext>(),
                     It.IsAny<CancellationToken>()),
-                Times.Once);
-
-            this.loggingBrokerMock.Verify(broker =>
-                broker.LogInformation(
-                    It.Is<string>(msg => msg.Contains(randomStudent.Id.ToString()))),
-                Times.AtLeastOnce);
+                Times.Never);
 
             this.storageBrokerMock.VerifyNoOtherCalls();
             this.envelopeFactoryMock.VerifyNoOtherCalls();
@@ -197,14 +184,6 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
                     message: "Student service error occurred, contact support.",
                     innerException: failedStudentServiceException);
 
-            this.envelopeFactoryMock.Setup(factory =>
-                factory.CreateAsync(
-                    It.IsAny<StudentModifiedEvent>(),
-                    StudentEventNames.StudentModified,
-                    It.IsAny<SecurityContext>(),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateStudentModifiedEnvelope(randomStudent));
-
             this.storageBrokerMock.Setup(broker =>
                 broker.SelectStudentByIdAsync(
                     randomStudent.Id,
@@ -240,12 +219,7 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
                     StudentEventNames.StudentModified,
                     It.IsAny<SecurityContext>(),
                     It.IsAny<CancellationToken>()),
-                Times.Once);
-
-            this.loggingBrokerMock.Verify(broker =>
-                broker.LogInformation(
-                    It.Is<string>(msg => msg.Contains(randomStudent.Id.ToString()))),
-                Times.AtLeastOnce);
+                Times.Never);
 
             this.storageBrokerMock.VerifyNoOtherCalls();
             this.envelopeFactoryMock.VerifyNoOtherCalls();

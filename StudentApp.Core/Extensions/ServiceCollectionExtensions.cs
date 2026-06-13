@@ -40,7 +40,7 @@ namespace StudentApp.Core.Extensions
             services.AddSingleton<IEmailBroker, EmailBroker>();
             services.AddSingleton<IDateTimeBroker, DateTimeBroker>();
             services.AddSingleton<IJsonSerializationBroker, JsonSerializationBroker>();
-            services.AddSingleton<IStorageBroker>(_ => new StorageBroker(connectionString));
+            services.AddScoped<IStorageBroker>(_ => new StorageBroker(connectionString));
 
             // Foundation Services
             services.AddTransient<StudentService>();

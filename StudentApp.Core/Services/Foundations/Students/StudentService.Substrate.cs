@@ -49,8 +49,7 @@ namespace StudentApp.Core.Services.Foundations.Students
                 return;
 
             maybeStudent.Status = "Enrolled";
-            maybeStudent.UpdatedBy = envelope.SecurityContext.Username ?? envelope.SecurityContext.ClientId;
-            maybeStudent.UpdatedWhen = await this.dateTimeBroker.GetCurrentDateTimeOffsetAsync();
+            maybeStudent = await this.securityBroker.ApplyModifyAuditValuesAsync(maybeStudent);
 
             EventEnvelope<StudentModifiedEvent> enrolledEnvelope =
                 new EventEnvelope<StudentModifiedEvent>

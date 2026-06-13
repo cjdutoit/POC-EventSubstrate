@@ -57,6 +57,10 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(randomStudent);
 
+            this.securityBrokerMock.Setup(broker =>
+                broker.ApplyModifyAuditValuesAsync(randomStudent))
+                .ReturnsAsync(randomStudent);
+
             this.storageBrokerMock.Setup(broker =>
                 broker.UpdateStudentAsync(
                     It.IsAny<Student>(),
@@ -87,7 +91,7 @@ namespace StudentApp.Core.Tests.Unit.Services.Foundations.Students
                 broker.SelectStudentByIdAsync(
                     randomStudent.Id,
                     It.IsAny<CancellationToken>()),
-                Times.Exactly(2));
+                Times.Once);
 
             this.storageBrokerMock.Verify(broker =>
                 broker.UpdateStudentAsync(

@@ -99,11 +99,15 @@ namespace StudentApp.Core.Services.Foundations.Students
             TryCatch(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-
-                // Validates the student object before any processing
-                // Validates audit fields are correctly set
                 ValidateStudentOnModify(student);
                 SecurityContext securityContext = await this.securityBroker.GetCurrentSecurityContextAsync();
+
+                Student maybeStudent =
+                    await this.storageBroker.SelectStudentByIdAsync(
+                        student.Id,
+                        cancellationToken);
+
+                ValidateStorageStudent(maybeStudent, student.Id);
 
                 EventEnvelope<StudentModifiedEvent> envelope =
                     await this.envelopeFactory.CreateAsync(
@@ -219,13 +223,6 @@ namespace StudentApp.Core.Services.Foundations.Students
         {
             this.loggingBroker.LogInformation(
                 $"[StudentService] Modifying student {student.Id}");
-
-            Student maybeStudent =
-                await this.storageBroker.SelectStudentByIdAsync(
-                    student.Id,
-                    cancellationToken);
-
-            ValidateStorageStudent(maybeStudent, student.Id);
 
             Student updatedStudent =
                 await this.storageBroker.UpdateStudentAsync(
